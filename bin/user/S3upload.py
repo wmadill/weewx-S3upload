@@ -42,7 +42,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
     """Custom service to upload files to an S3 bucket"""
 
     def run(self):
-        syslog.syslog(syslog.LOG_INFO, """reportengine: S3generator""")
+        syslog.syslog(syslog.LOG_INFO, """reportengine: S3uploadGenerator""")
 
         try:
             # Get the options from the configuration dictionary.
