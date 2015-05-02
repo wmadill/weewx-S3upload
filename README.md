@@ -18,13 +18,16 @@ Search their help pages for how to set up the bucket as a static
 website. You'll need to add a DNS record for the URL you choose for
 accessing the bucket.
 
+Install `s3cmd` from http://s3tools.org/s3cmd. It is a Python 2.x
+tool so will run fine on the same computer as weewx.
+
 Clone this repo to your weewx extensions directory; for example
 
 ```
 git clone git@github.com:wmadill/weewx-S3upload /home/weewx/extensions/weewx-S3upload
 ```
 
-## Installation instructions:
+## Installation instructions
 
 1. run the installer
 
