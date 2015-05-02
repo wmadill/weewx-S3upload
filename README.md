@@ -8,6 +8,8 @@ and is costing me around USD 0.50/month. This is cheaper than usual
 website hosting and saves me the worry of someone hacking into the
 system running weewx.
 
+This has been tested against weewx 3.1.0.
+
 ## Setup
 
 Before installing this extensions, get an S3 bucket at Amazon
