@@ -63,7 +63,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         # Launch in a separate thread so it doesn't block the main LOOP thread:
         t  = threading.Thread(target=S3uploadGenerator.uploadFiles, args=(self, ))
         t.start()
-        syslog.syslog(syslog.LOG_DEBUG, "S3upload: reeturn from upload thread")
+        syslog.syslog(syslog.LOG_DEBUG, "S3upload: return from upload thread")
 
     def uploadFiles(self):
         start_ts = time.time()
