@@ -1,6 +1,11 @@
 # Change Log
 
-## v1.0 - 2May 2015
+## v1.1 - 12 May 2015
+
+- Fix typo preventing processing of s3cmd output
+- Add formatting of s3cmd errors
+
+## v1.0 - 2 May 2015
 
 - Fix generator name in skin.conf which was missed in earlier
 extension renaming.
