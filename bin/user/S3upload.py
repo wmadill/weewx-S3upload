@@ -82,7 +82,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         try:
             S3upload_cmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            stdout = s3upload_cmd.communicate()[0]
+            stdout = S3upload_cmd.communicate()[0]
             stroutput = stdout.strip()
         except OSError, e:
             if e.errno == errno.ENOENT:
@@ -118,7 +118,9 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
                 S3upload_message = "executed in %0.2f seconds"
         else:
             # suspect we have an s3cmd error so display a message
-            syslog.syslog(syslog.LOG_INFO, "S3upload: s3cmd reported errors: %s" % stroutput)
+            syslog.syslog(syslog.LOG_INFO, "S3upload: s3cmd reported errors")
+            for line in iter(stroutput.splitlines()):
+                syslog.syslog(syslog.LOG_INFO, "S3upload: s3cmd error: %s" % line)
             S3upload_message = "executed in %0.2f seconds"
         
         stop_ts = time.time()
