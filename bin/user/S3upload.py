@@ -71,7 +71,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         syslog.syslog(syslog.LOG_INFO, "S3upload: start upload at %s" % t_str)
 
         # Build command
-        cmd = ["/usr/local/bin/s3cmd"]
+        cmd = ["/usr/bin/s3cmd"]
         cmd.extend(["sync"])
         cmd.extend(["--access_key=%s" % self.access_key])
         cmd.extend(["--secret_key=%s" % self.secret_token])
