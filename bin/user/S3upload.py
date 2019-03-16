@@ -34,8 +34,13 @@ import traceback
 import configobj
 
 from weeutil.weeutil import timestamp_to_string, option_as_list
+
 # from weewx.reportengine import ReportGenerator
-import weewx.manager
+
+# apparently not needed 3/15/19
+#import weewx.manager
+
+import weewx
 
 # Inherit from the base class ReportGenerator
 class S3uploadGenerator(weewx.reportengine.ReportGenerator):
@@ -81,7 +86,6 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         syslog.syslog(syslog.LOG_DEBUG, "S3upload command: %s" % cmd)
         try:
             S3upload_cmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
             stdout = S3upload_cmd.communicate()[0]
             stroutput = stdout.strip()
         except OSError, e:
@@ -98,7 +102,10 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         if stroutput.find('Done. Uploaded ') >= 0:
             file_cnt = 0
             for line in iter(stroutput.splitlines()):
-                if line.find('File ') >= 0:
+                # Not sure what a specific upload failure looks like.
+                # This is what s3cmd version 1.6.1 returns on successful upload.
+                # Note that this is from the Debian repos and is ooolllldddd
+                if line.find('upload: ') >= 0:
                     file_cnt += 1
                 if line.find('Done. Uploaded ') >= 0:
                     # get number of bytes uploaded
