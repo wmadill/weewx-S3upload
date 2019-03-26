@@ -13,9 +13,14 @@ To use this uploader, add the following to your configuration file in the
 
     [[S3upload]]
         skin = S3upload
-        access_key = "PARM1"
-        secret_token = "PARM2"
         bucket_name = "BUCKETNAME"
+
+In the weewx home directory, create file named "S3keys.txt" to contain the
+AWS IAM user credentials. Set the permissions to 0600, and put the following
+two lines in it. DO NOT CHECK THIS INTO github!
+
+access_key = "PARM1"
+secret_token = "PARM2"
 
 ********************************************************************************
 """
@@ -47,33 +52,44 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
     """Custom service to upload files to an S3 bucket"""
 
     def run(self):
-        syslog.syslog(syslog.LOG_INFO, """reportengine: S3uploadGenerator""")
+        syslog.syslog(syslog.LOG_DEBUG, """s3uploadgenerator: start S3uploadGenerator""")
 
         try:
-            # Get the options from the configuration dictionary.
+            # Get keys from local file
+            key_dict = {}
+            with open('/home/weewx/S3keys.txt') as fileobj:
+                for line in fileobj:
+                    key, value = line.split('=')
+                    key_dict[key.strip()] = value.strip()
+
+            for k,v in key_dict.items():
+                syslog.syslog(syslog.LOG_DEBUG, "key %s has value %s" % (k, v));
+             
+            # Get the options from the configuration dictionary and credential file.
             # Raise an exception if a required option is missing.
             html_root = self.config_dict['StdReport']['HTML_ROOT']
             self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
-            self.access_key = self.skin_dict['access_key']
-            self.secret_token = self.skin_dict['secret_token']
+            self.access_key = key_dict['access_key']
+            self.secret_token = key_dict['secret_token']
             self.bucket_name = self.skin_dict['bucket_name']
 
-            syslog.syslog(syslog.LOG_INFO, "S3upload: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
+            syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
         except KeyError, e:
-            syslog.syslog(syslog.LOG_INFO, "S3upload: no upload configured. %s" % e)
+            syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: no upload configured. %s" % e)
+            # Bug? Does this return without running rest of the code?
 
-        syslog.syslog(syslog.LOG_DEBUG, "S3upload: uploading")
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: uploading")
 
         # Launch in a separate thread so it doesn't block the main LOOP thread:
         t  = threading.Thread(target=S3uploadGenerator.uploadFiles, args=(self, ))
         t.start()
-        syslog.syslog(syslog.LOG_DEBUG, "S3upload: return from upload thread")
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: return from upload thread")
 
     def uploadFiles(self):
         start_ts = time.time()
         t_str = timestamp_to_string(start_ts)
-        syslog.syslog(syslog.LOG_INFO, "S3upload: start upload at %s" % t_str)
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: start upload at %s" % t_str)
 
         # Build command
         cmd = ["/usr/bin/s3cmd"]
@@ -83,20 +99,20 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         cmd.extend([self.local_root])
         cmd.extend(["s3://%s" % self.bucket_name])
 
-        syslog.syslog(syslog.LOG_DEBUG, "S3upload command: %s" % cmd)
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: command: %s" % cmd)
         try:
             S3upload_cmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout = S3upload_cmd.communicate()[0]
             stroutput = stdout.strip()
         except OSError, e:
             if e.errno == errno.ENOENT:
-                syslog.syslog(syslog.LOG_ERR, "S3upload: s3cmd does not appear to be installed on this system. (errno %d, \"%s\")" % (e.errno, e.strerror))
+                syslog.syslog(syslog.LOG_ERR, "s3uploadgenerator: s3cmd does not appear to be installed on this system. (errno %d, \"%s\")" % (e.errno, e.strerror))
             raise
         
         if weewx.debug == 1:
-            syslog.syslog(syslog.LOG_DEBUG, "S3upload: s3cmd output: %s" % stroutput)
+            syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd output: %s" % stroutput)
             for line in iter(stroutput.splitlines()):
-                syslog.syslog(syslog.LOG_DEBUG, "S3upload: s3cmd output: %s" % line)
+                syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd output: %s" % line)
 
         # S3upload output. generate an appropriate message
         if stroutput.find('Done. Uploaded ') >= 0:
@@ -125,16 +141,16 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
                 S3upload_message = "executed in %0.2f seconds"
         else:
             # suspect we have an s3cmd error so display a message
-            syslog.syslog(syslog.LOG_INFO, "S3upload: s3cmd reported errors")
+            syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: s3cmd reported errors")
             for line in iter(stroutput.splitlines()):
-                syslog.syslog(syslog.LOG_INFO, "S3upload: s3cmd error: %s" % line)
+                syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: s3cmd error: %s" % line)
             S3upload_message = "executed in %0.2f seconds"
         
         stop_ts = time.time()
-        syslog.syslog(syslog.LOG_INFO, "S3upload: "  + S3upload_message % (stop_ts - start_ts))
+        syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: results: "  + S3upload_message % (stop_ts - start_ts))
 
         t_str = timestamp_to_string(stop_ts)
-        syslog.syslog(syslog.LOG_INFO, "S3upload: end upload at %s" % t_str)
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: end upload at %s" % t_str)
 
 if __name__ == '__main__':
     """This section is used for testing the code. """
