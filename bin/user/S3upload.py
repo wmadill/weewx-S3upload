@@ -15,12 +15,12 @@ To use this uploader, add the following to your configuration file in the
         skin = S3upload
         bucket_name = "BUCKETNAME"
 
-In the weewx home directory, create file named "S3keys.txt" to contain the
-AWS IAM user credentials. Set the permissions to 0600, and put the following
-two lines in it. DO NOT CHECK THIS INTO github!
+In the weewx home directory, create a file named ".s3cfg" if it doesn't 
+already exist and set the "access_key" and "secret_key" values for the
+IAM user that runs s3cmd. Refer to the s3cmd man page for details.
 
-access_key = "PARM1"
-secret_token = "PARM2"
+Set the file permissions to 0600 but DO NOT CHECK THIS INTO a pulbic 
+git repository.
 
 ********************************************************************************
 """
@@ -55,22 +55,13 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         syslog.syslog(syslog.LOG_DEBUG, """s3uploadgenerator: start S3uploadGenerator""")
 
         try:
-            # Get keys from local file
-            key_dict = {}
-            with open('/home/weewx/S3keys.txt') as fileobj:
-                for line in fileobj:
-                    key, value = line.split('=')
-                    key_dict[key.strip()] = value.strip()
-
-            for k,v in key_dict.items():
-                syslog.syslog(syslog.LOG_DEBUG, "key %s has value %s" % (k, v));
              
             # Get the options from the configuration dictionary and credential file.
             # Raise an exception if a required option is missing.
             html_root = self.config_dict['StdReport']['HTML_ROOT']
             self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
-            self.access_key = key_dict['access_key']
-            self.secret_token = key_dict['secret_token']
+            # May be able to pull bucket_name from .s3cfg
+            # Depending on what $HOME is, put full path to .s3cfg as 'CFG_FILE'
             self.bucket_name = self.skin_dict['bucket_name']
 
             syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
@@ -94,8 +85,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         # Build command
         cmd = ["/usr/bin/s3cmd"]
         cmd.extend(["sync"])
-        cmd.extend(["--access_key=%s" % self.access_key])
-        cmd.extend(["--secret_key=%s" % self.secret_token])
+        cmd.extend(["--config=/home/weewx/.s3cfg"])
         cmd.extend([self.local_root])
         cmd.extend(["s3://%s" % self.bucket_name])
 
