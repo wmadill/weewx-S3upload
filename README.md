@@ -49,8 +49,7 @@ DO NOT CHECK THIS INTO A PUBLIC git REPOSITORY.
 4. restart weewx:
 
   ```
-  sudo /etc/init.d/weewx stop
-  sudo /etc/init.d/weewx start
+  sudo systemctl restart weewx
   ```
 
 ## Manual installation instructions:
@@ -73,8 +72,10 @@ DO NOT CHECK THIS INTO A PUBLIC git REPOSITORY.
           bucket_name = 'REPLACE_WITH_YOUR_S3_BUCKET_NAME'
   ```
 
-3. start weewx
+3. create .s3cfg as described above.
+
+4. restart weewx
 
   ```
-  sudo /etc/init.d/weewx start
+  sudo systemctl restart weewx
   ```
