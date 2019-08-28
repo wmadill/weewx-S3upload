@@ -38,11 +38,15 @@ git clone git@github.com:wmadill/weewx-S3upload /home/weewx/extensions/weewx-S3u
   setup.py install --extension extensions/weewx-S3upload
   ```
 
-2. modify the S3upload stanza in weewx.conf and set your S3 access
-code, secret token, and bucket name. You will get those when you set
-up the bucket you want to use.
+2. modify the S3upload stanza in weewx.conf and set your S3 bucket name.
 
-3. restart weewx:
+3. create .s3cfg in the weewx home directory if it doesn't already exist.
+Set the "access_key" and the "secret_key" values for the IAM user that
+runs s3cmd (you get these when you create the bucket at AWS). Refer to
+the s3cmd man page for details. Set the file permissions to 0600 but
+DO NOT CHECK THIS INTO A PUBLIC git REPOSITORY.
+
+4. restart weewx:
 
   ```
   sudo /etc/init.d/weewx stop
@@ -65,8 +69,7 @@ up the bucket you want to use.
       ...
       [[S3upload]]
           skin = S3upload
-          acces_key = 'REPLACE_WITH_YOUR_S3_ACCESS_KEY'
-          secret_token ='REPLACE_WITH_YOUR_SECRET_TOKEN'
+          enable = yes
           bucket_name = 'REPLACE_WITH_YOUR_S3_BUCKET_NAME'
   ```
 
