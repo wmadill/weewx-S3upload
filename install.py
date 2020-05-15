@@ -8,7 +8,7 @@ def loader():
 class S3uploadInstaller(ExtensionInstaller):
     def __init__(self):
         super(S3uploadInstaller, self).__init__(
-            version="0.1",
+            version="1.3",
             name='S3upload',
             description='Upload files to an S3 bucket',
             author='Bill Madill',
@@ -17,8 +17,6 @@ class S3uploadInstaller(ExtensionInstaller):
                 'StdReport': {
                     'S3upload': {
                         'skin': 'S3upload',
-                        'access_key': 'REPLACE_WITH_YOUR_S3_ACCESS_KEY',
-                        'secrect_token': 'REPLACE_WITH_YOUR_SECRET_TOKEN',
                         'bucket_name': 'REPLACE_WITH_YOUR_S3_BUCKET_NAME',}}},
             files=[('bin/user', ['bin/user/S3upload.py']),
                    ('skins/S3upload', ['skins/S3upload/skin.conf'])],
