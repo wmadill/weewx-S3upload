@@ -1,5 +1,5 @@
 #
-#    Copyright (c) 2015 Bill Madill <bill@jamimi.com>
+#    Copyright (c) 2015-2020 Bill Madill <wm@wmadill.com>
 #    Derivative of extensions/alarm.py, credit to Tom Keffer <tkeffer@gmail.com>
 #
 #    See the file LICENSE.txt for your full rights.
@@ -19,7 +19,7 @@ In the weewx home directory, create a file named ".s3cfg" if it doesn't
 already exist and set the "access_key" and "secret_key" values for the
 IAM user that runs s3cmd. Refer to the s3cmd man page for details.
 
-Set the file permissions to 0600 but DO NOT CHECK THIS INTO a pulbic 
+Set the ".s3cfg"  permissions to 0600 but DO NOT CHECK IT INTO a pulbic 
 git repository.
 
 ********************************************************************************
@@ -40,11 +40,6 @@ import configobj
 
 from weeutil.weeutil import timestamp_to_string, option_as_list
 
-# from weewx.reportengine import ReportGenerator
-
-# apparently not needed 3/15/19
-#import weewx.manager
-
 import weewx
 
 # Inherit from the base class ReportGenerator
@@ -55,21 +50,27 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         syslog.syslog(syslog.LOG_DEBUG, """s3uploadgenerator: start S3uploadGenerator""")
 
         try:
-             
             # Get the options from the configuration dictionary and credential file.
             # Raise an exception if a required option is missing.
             html_root = self.config_dict['StdReport']['HTML_ROOT']
             self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
-            # May be able to pull bucket_name from .s3cfg
-            # Depending on what $HOME is, put full path to .s3cfg as 'CFG_FILE'
             self.bucket_name = self.skin_dict['bucket_name']
 
             syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
         except KeyError, e:
             syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: no upload configured. %s" % e)
-            # Bug? Does this return without running rest of the code?
+            exit(1)
 
+        # Get full path to "s3cmd"; exit if not installed
+        path_proc = subprocess.Popen(["which", "s3cmd"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.s3cmd_path = path_proc.communicate()[0].decode().strip()
+        # 'which' returns an empty string if "s3cmd" not in $PATH
+        if self.s3cmd_path == '':
+            self.loginf("s3uploadgenerator: 's3cmd' cannot be found")
+            exit(1)
+
+        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd location: " + self.s3cmd_path)
         syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: uploading")
 
         # Launch in a separate thread so it doesn't block the main LOOP thread:
@@ -83,7 +84,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: start upload at %s" % t_str)
 
         # Build command
-        cmd = ["/usr/bin/s3cmd"]
+        cmd = [self.s3cmd_path]
         cmd.extend(["sync"])
         cmd.extend(["--config=/home/weewx/.s3cfg"])
         cmd.extend([self.local_root])
@@ -144,6 +145,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
 if __name__ == '__main__':
     """This section is used for testing the code. """
+    exit(0)
     # Note that this fails!
     import sys
     import configobj
