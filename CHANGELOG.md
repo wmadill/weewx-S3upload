@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.3 - 15 May 2020
+Final Python2/weewx 3 version - CAUTION this version is not yet tested
+- Update install script and README - Fixes #2 and #3
+- Remove irrelevant comments
+- Dynamically get path to "s3cmd" - Fixes #r
+
 ## v1.2 - 28 March 2019
 - Remove AWS credentials from weewx.conf stanza in favor of .s3cfg file
 
