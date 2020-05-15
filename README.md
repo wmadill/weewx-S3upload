@@ -8,7 +8,8 @@ and is costing me around USD 0.50/month. This is cheaper than usual
 website hosting and saves me the worry of someone hacking into the
 system running weewx.
 
-This has been tested against weewx 3.1.0.
+This has been tested against weewx 4.0.0. It should work on weewx 3.x
+but has not, as of 5/15/20, been tested.
 
 ## Setup
 
@@ -20,22 +21,24 @@ Search their help pages for how to set up the bucket as a static
 website. You'll need to add a DNS record for the URL you choose for
 accessing the bucket.
 
-Install `s3cmd` from http://s3tools.org/s3cmd. It is a Python 2.x
-tool so will run fine on the same computer as weewx.
+Install `s3cmd` from http://s3tools.org/s3cmd. Version 2 is compatible
+with both Python 2 and Python 3 so will work on either weewx 3 and
+weewx 4. Be careful about using the version packaged with your distro
+because they are often quite old.
 
 Clone this repo to your weewx extensions directory; for example
 
 ```
-git clone git@github.com:wmadill/weewx-S3upload /home/weewx/extensions/weewx-S3upload
+git clone git@github.com:wmadill/weewx-S3upload ~/weewx-S3upload
 ```
 
 ## Installation instructions
 
-1. run the installer
+1. run the installer (using the cloned location from above)
 
   ```
   cd /home/weewx
-  setup.py install --extension extensions/weewx-S3upload
+  sudo bin/wee_extension --install=~/weewx-S3upload
   ```
 
 2. modify the S3upload stanza in weewx.conf and set your S3 bucket name.
@@ -61,7 +64,7 @@ DO NOT CHECK THIS INTO A PUBLIC git REPOSITORY.
   cp -rp bin/user/S3upload /home/weewx/bin/user
   ```
 
-2. add the following to weewx.con
+2. add the following to weewx.conf
 
   ```
   [StdReport]
