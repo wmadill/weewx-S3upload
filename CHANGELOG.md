@@ -1,5 +1,11 @@
 # Change Log
 
+## v2.0 - 15 May 2020
+Python3/weewx 4 initial release - NOT TESTED against weewx 3
+- Convert to python3
+- Convert to use new weewx logging but maintain backwards
+  compatibility
+
 ## v1.3 - 15 May 2020
 Final Python2/weewx 3 version - CAUTION this version is not yet tested
 - Update install script and README - Fixes #2 and #3

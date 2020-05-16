@@ -19,7 +19,7 @@ In the weewx home directory, create a file named ".s3cfg" if it doesn't
 already exist and set the "access_key" and "secret_key" values for the
 IAM user that runs s3cmd. Refer to the s3cmd man page for details.
 
-Set the ".s3cfg"  permissions to 0600 but DO NOT CHECK IT INTO a pulbic 
+Set the ".s3cfg" file permissions to 0600 but DO NOT CHECK IT INTO a pulbic 
 git repository.
 
 ********************************************************************************
@@ -31,35 +31,65 @@ import os.path
 import re
 import subprocess
 import sys
-import syslog
 import threading
 import time
 import traceback
-
 import configobj
 
 from weeutil.weeutil import timestamp_to_string, option_as_list
-
 import weewx
 
 # Inherit from the base class ReportGenerator
 class S3uploadGenerator(weewx.reportengine.ReportGenerator):
     """Custom service to upload files to an S3 bucket"""
 
-    def run(self):
-        syslog.syslog(syslog.LOG_DEBUG, """s3uploadgenerator: start S3uploadGenerator""")
+    # Set up logging for both weewx 3 and weewx 4
+    try:
+        # Test for new-style weewx logging by trying to import weeutil.logger
+        import weeutil.logger
+        import logging
+        log = logging.getLogger(__name__)
+    
+        def logdbg(self, msg):
+            self.log.debug(msg)
+    
+        def loginf(self, msg):
+            self.log.info(msg)
+    
+        def logerr(self, msg):
+            self.log.error(msg)
+    
+    except ImportError:
+        # Old-style weewx logging
+        import syslog
+    
+        def logmsg(self, level, msg):
+            syslog.syslog(level, 's3uploadgenerator: %s:' % msg)
+    
+        def logdbg(self, msg):
+            logmsg(syslog.LOG_DEBUG, msg)
+    
+        def loginf(self, msg):
+            logmsg(syslog.LOG_INFO, msg)
+    
+        def logerr(self, msg):
+            logmsg(syslog.LOG_ERR, msg)
 
+    def run(self):
+        self.logdbg("""s3uploadgenerator: start S3uploadGenerator""")
+        self.logdbg("s3uploadgenerator: python version: "  + sys.version)
+
+        # Get the options from the configuration dictionary and credential file.
+        # Raise an exception if a required option is missing.
         try:
-            # Get the options from the configuration dictionary and credential file.
-            # Raise an exception if a required option is missing.
             html_root = self.config_dict['StdReport']['HTML_ROOT']
             self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
             self.bucket_name = self.skin_dict['bucket_name']
 
-            syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
+            self.logdbg("s3uploadgenerator: upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
-        except KeyError, e:
-            syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: no upload configured. %s" % e)
+        except KeyError as e:
+            self.loginf("s3uploadgenerator: no upload configured. %s" % e)
             exit(1)
 
         # Get full path to "s3cmd"; exit if not installed
@@ -70,53 +100,53 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
             self.loginf("s3uploadgenerator: 's3cmd' cannot be found")
             exit(1)
 
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd location: " + self.s3cmd_path)
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: uploading")
+        self.logdbg("s3uploadgenerator: s3cmd location: "  + self.s3cmd_path)
+        self.logdbg("s3uploadgenerator: uploading")
 
         # Launch in a separate thread so it doesn't block the main LOOP thread:
-        t  = threading.Thread(target=S3uploadGenerator.uploadFiles, args=(self, ))
+        t  = threading.Thread(target=self.uploadFiles)
         t.start()
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: return from upload thread")
+        self.logdbg("s3uploadgenerator: return from upload thread")
 
     def uploadFiles(self):
         start_ts = time.time()
         t_str = timestamp_to_string(start_ts)
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: start upload at %s" % t_str)
+        self.logdbg("s3uploadgenerator: start upload at %s" % t_str)
 
-        # Build command
+        # Build s3cmd command string
         cmd = [self.s3cmd_path]
         cmd.extend(["sync"])
         cmd.extend(["--config=/home/weewx/.s3cfg"])
         cmd.extend([self.local_root])
         cmd.extend(["s3://%s" % self.bucket_name])
 
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: command: %s" % cmd)
+        self.logdbg("s3uploadgenerator: command: %s" % cmd)
         try:
             S3upload_cmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout = S3upload_cmd.communicate()[0]
             stroutput = stdout.strip()
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
-                syslog.syslog(syslog.LOG_ERR, "s3uploadgenerator: s3cmd does not appear to be installed on this system. (errno %d, \"%s\")" % (e.errno, e.strerror))
+                self.logerr("s3uploadgenerator: s3cmd does not appear to be installed on this system. (errno %d, \"%s\")" % (e.errno, e.strerror))
             raise
         
         if weewx.debug == 1:
-            syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd output: %s" % stroutput)
+            self.logdbg("s3uploadgenerator: s3cmd output: %s" % stroutput)
             for line in iter(stroutput.splitlines()):
-                syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: s3cmd output: %s" % line)
+                self.logdbg("s3uploadgenerator: s3cmd output: %s" % line)
 
         # S3upload output. generate an appropriate message
-        if stroutput.find('Done. Uploaded ') >= 0:
+        if stroutput.find(b'Done. Uploaded ') >= 0:
             file_cnt = 0
             for line in iter(stroutput.splitlines()):
                 # Not sure what a specific upload failure looks like.
                 # This is what s3cmd version 1.6.1 returns on successful upload.
                 # Note that this is from the Debian repos and is ooolllldddd
-                if line.find('upload: ') >= 0:
+                if line.find(b'upload: ') >= 0:
                     file_cnt += 1
-                if line.find('Done. Uploaded ') >= 0:
+                if line.find(b'Done. Uploaded ') >= 0:
                     # get number of bytes uploaded
-                    m = re.search(r"Uploaded (\d*) bytes", line)
+                    m = re.search(r"Uploaded (\d*) bytes", str(line))
                     if m:
                         byte_cnt = int(m.group(1))
                     else:
@@ -132,16 +162,16 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
                 S3upload_message = "executed in %0.2f seconds"
         else:
             # suspect we have an s3cmd error so display a message
-            syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: s3cmd reported errors")
+            self.loginf("s3uploadgenerator: s3cmd reported errors")
             for line in iter(stroutput.splitlines()):
-                syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: s3cmd error: %s" % line)
+                self.loginf("s3uploadgenerator: s3cmd error: %s" % line)
             S3upload_message = "executed in %0.2f seconds"
         
         stop_ts = time.time()
-        syslog.syslog(syslog.LOG_INFO, "s3uploadgenerator: results: "  + S3upload_message % (stop_ts - start_ts))
+        self.loginf("s3uploadgenerator: results: "  + S3upload_message % (stop_ts - start_ts))
 
         t_str = timestamp_to_string(stop_ts)
-        syslog.syslog(syslog.LOG_DEBUG, "s3uploadgenerator: end upload at %s" % t_str)
+        self.logdbg("s3uploadgenerator: end upload at %s" % t_str)
 
 if __name__ == '__main__':
     """This section is used for testing the code. """
@@ -175,7 +205,7 @@ if __name__ == '__main__':
     try :
         config_dict = configobj.ConfigObj(config_path, file_error=True)
     except IOError:
-        print "Unable to open configuration file ", config_path
+        print ("Unable to open configuration file ", config_path)
         exit()
         
     if 'S3upload' not in config_dict:
