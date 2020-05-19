@@ -1,5 +1,11 @@
 # Change Log
 
+## v2.1 - 19 May 2020
+Now work on Python 2.7/weewx 3.9.2 and Python 3.7.3/weewx 4.0.0
+on Debian 10.3
+- Fixed errors running on Python 2.7
+- Tested on both environments
+
 ## v2.0 - 15 May 2020
 Python3/weewx 4 initial release - NOT TESTED against weewx 3
 - Convert to python3

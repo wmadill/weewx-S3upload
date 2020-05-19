@@ -8,8 +8,8 @@ and is costing me around USD 0.50/month. This is cheaper than usual
 website hosting and saves me the worry of someone hacking into the
 system running weewx.
 
-This has been tested against weewx 4.0.0. It should work on weewx 3.x
-but has not, as of 5/15/20, been tested.
+This has been tested against Python 3.7/weewx 4.0.0 and Python 2.7/
+weewx 3.9.2 on Debian 10.3.
 
 ## Setup
 
