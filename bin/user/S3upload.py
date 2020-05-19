@@ -43,7 +43,12 @@ import weewx
 class S3uploadGenerator(weewx.reportengine.ReportGenerator):
     """Custom service to upload files to an S3 bucket"""
 
-    # Set up logging for both weewx 3 and weewx 4
+    # Set up logging for both weewx 3 and weewx 4 from tkeffer's blog
+    # post.
+    
+    # This syntax is really dorky--there must be a better way without
+    # having all the "self." on names. But this works as offensive
+    # as it is....
     try:
         # Test for new-style weewx logging by trying to import weeutil.logger
         import weeutil.logger
@@ -64,16 +69,16 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         import syslog
     
         def logmsg(self, level, msg):
-            syslog.syslog(level, 's3uploadgenerator: %s:' % msg)
+            self.syslog.syslog(level, 's3uploadgenerator: %s:' % msg)
     
         def logdbg(self, msg):
-            logmsg(syslog.LOG_DEBUG, msg)
+            self.logmsg(self.syslog.LOG_DEBUG, msg)
     
         def loginf(self, msg):
-            logmsg(syslog.LOG_INFO, msg)
+            self.logmsg(self.syslog.LOG_INFO, msg)
     
         def logerr(self, msg):
-            logmsg(syslog.LOG_ERR, msg)
+            self.logmsg(self.syslog.LOG_ERR, msg)
 
     def run(self):
         self.logdbg("""s3uploadgenerator: start S3uploadGenerator""")
