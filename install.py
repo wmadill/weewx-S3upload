@@ -8,11 +8,11 @@ def loader():
 class S3uploadInstaller(ExtensionInstaller):
     def __init__(self):
         super(S3uploadInstaller, self).__init__(
-            version="1.3",
+            version="2.1",
             name='S3upload',
             description='Upload files to an S3 bucket',
             author='Bill Madill',
-            author_email='bill@jamimi.com',
+            author_email='wm@wmadill.com',
             config={
                 'StdReport': {
                     'S3upload': {
