@@ -16,6 +16,9 @@ To use this uploader, add the following to your configuration file in the
         bucket_name = "BUCKET_NAME"
         s3cmd_path = /full/path/to/s3cmd
 
+The "s3cmd_path" entry is only needed if the uploader cannot find where
+s3cmd is installed.
+
 In the weewx home directory, create a file named ".s3cfg" if it doesn't 
 already exist and set the "access_key" and "secret_key" values for the
 IAM user that runs s3cmd. Refer to the s3cmd man page for details.
@@ -32,7 +35,6 @@ import os.path
 import re
 import subprocess
 import sys
-import threading
 import time
 import traceback
 import configobj
@@ -53,7 +55,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         import weeutil.logger
         import logging
         log = logging.getLogger(__name__)
-
+        
         def logdbg(self, msg):
             self.log.debug(MSG_BASE + msg)
         
@@ -66,16 +68,16 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
     except ImportError:
         # Old-style weewx logging
         import syslog
-
+        
         def logmsg(self, level, msg):
             self.syslog.syslog(level, MSG_BASE + "%s:" % msg)
         
         def logdbg(self, msg):
             self.logmsg(self.syslog.LOG_DEBUG, msg)
-
+        
         def loginf(self, msg):
             self.logmsg(self.syslog.LOG_INFO, msg)
-
+        
         def logerr(self, msg):
             self.logmsg(self.syslog.LOG_ERR, msg)
 
@@ -125,17 +127,6 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
             return
 
         self.logdbg("s3cmd location: "  + self.s3cmd_path)
-        self.logdbg("uploading")
-
-        # Launch in a separate thread so it doesn't block the main LOOP thread:
-        t  = threading.Thread(target=self.uploadFiles)
-        t.start()
-
-    # The thread that does all the work
-    def uploadFiles(self):
-        start_ts = time.time()
-        t_str = timestamp_to_string(start_ts)
-        self.logdbg("start upload at %s" % t_str)
 
         # Build s3cmd command string
         cmd = [self.s3cmd_path]
@@ -148,6 +139,13 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         cmd.extend(["s3://%s" % self.bucket_name])
 
         self.logdbg("command: %s" % cmd)
+
+        # Upload the files
+        self.logdbg("uploading")
+        start_ts = time.time()
+        t_str = timestamp_to_string(start_ts)
+        self.logdbg("start upload at %s" % t_str)
+
         try:
             S3upload_cmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout = S3upload_cmd.communicate()[0]
@@ -159,6 +157,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         
         stop_ts = time.time()
         time_msg = "executed in %0.2f seconds" % (stop_ts - start_ts)
+
         upload_msg = self.parseoutput(stroutput)
         if upload_msg == "":
             self.loginf(time_msg)
@@ -167,6 +166,9 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         t_str = timestamp_to_string(stop_ts)
         self.logdbg("end upload at %s" % t_str)
+
+        ### Done uploading
+
     # Parse s3cmd output, generate, and return an appropriate message.
     # This output parsing routine is based on what s3cmd 1.6.1 returned
     # with various tests. While the output returned from a successful
