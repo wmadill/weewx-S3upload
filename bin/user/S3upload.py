@@ -13,7 +13,8 @@ To use this uploader, add the following to your configuration file in the
 
     [[S3upload]]
         skin = S3upload
-        bucket_name = "BUCKETNAME"
+        bucket_name = "BUCKET_NAME"
+        s3cmd_path = /full/path/to/s3cmd
 
 In the weewx home directory, create a file named ".s3cfg" if it doesn't 
 already exist and set the "access_key" and "secret_key" values for the
@@ -100,17 +101,28 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         self.logdbg("upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
-        except KeyError as e:
-            self.loginf("s3uploadgenerator: no upload configured. %s" % e)
-            exit(1)
-
+        
         # Get full path to "s3cmd"; exit if not installed
-        path_proc = subprocess.Popen(["which", "s3cmd"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        self.s3cmd_path = path_proc.communicate()[0].decode().strip()
-        # 'which' returns an empty string if "s3cmd" not in $PATH
-        if self.s3cmd_path == '':
-            self.loginf("s3uploadgenerator: 's3cmd' cannot be found")
-            exit(1)
+        # use 's3cmd_path' from configuration dictionary if set
+        self.s3cmd_path = None
+        try:
+            self.s3cmd_path = self.skin_dict['s3cmd_path']
+        except KeyError as e:
+            self.logdbg("s3cmd_path not set")
+        
+        # Full path to "s3cmd" not set; try to find it
+        if self.s3cmd_path is None:
+            path_proc = subprocess.Popen(["which", "s3cmd"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            self.s3cmd_path = path_proc.communicate()[0].decode().strip()
+            # 'which' returns an empty string if "s3cmd" not in $PATH
+            if self.s3cmd_path == '':
+                self.logerr("'s3cmd' cannot be found")
+                return
+
+        # Validate that the file is executble
+        if not os.access(self.s3cmd_path, os.X_OK):
+            self.logerr("%s is not an executable file" % self.s3cmd_path)
+            return
 
         self.logdbg("s3cmd location: "  + self.s3cmd_path)
         self.logdbg("uploading")
