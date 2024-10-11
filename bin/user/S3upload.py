@@ -139,15 +139,13 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         # Build s3cmd command string
         cmd = [self.s3cmd_path]
-        cmd.extend(["sync"])
-        ##FIXME need to find correct directory
-        cmd.extend(["--config=/home/weewx/.s3cfg"])
-        cmd.extend([self.local_root])
-        cmd.extend(["s3://%s" % self.bucket_name])
-        # Hopefully css files get set correctly
-        ##FIXME remove comment when below is tested
         cmd.extend(["--guess-mime-type"])
         cmd.extend(["--no-mime-magic"])
+        cmd.extend(["sync"])
+        ##FIXME need to find correct directory
+        #cmd.extend(["--config=/home/weewx/.s3cfg"])
+        cmd.extend([self.local_root])
+        cmd.extend(["s3://%s" % self.bucket_name])
 
         self.logdbg("command: %s" % cmd)
         try:
