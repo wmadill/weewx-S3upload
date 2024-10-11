@@ -182,18 +182,13 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         if stroutput == b'':
             return "no changes to upload"
 
-        line_num = 0
-        for line in iter(stroutput.splitlines()):
-            line_num += 1
-            self.logdbg("s3cmd line %s: %s" % (line_num, line))
+        # Log returned output if debug 
+        self.logoutput(stroutput, self.logdbg)
 
         if stroutput.find(b'Done. Uploaded ') < 0:
-            # suspect we have an s3cmd error so display a message
-            self.loginf("s3cmd reported errors")
-            line_num = 0
-            for line in iter(stroutput.splitlines()):
-                line_num += 1
-                self.loginf("s3cmd line %s: %s" % (line_num, line))
+            # suspect we have an s3cmd error so log a message and returned output
+            self.logerr("s3cmd reported errors")
+            self.logoutput(stroutput, self.loginf)
             return ""
 
         file_cnt = 0
@@ -209,6 +204,14 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
                     byte_msg = "Unknown number of bytes"
 
         return "uploaded %d files " % file_cnt + byte_msg
+
+    # Log raw output from s3cmd. 
+    # 
+    def logoutput(self, stroutput, logfn):
+        line_num = 0
+        for line in iter(stroutput.splitlines()):
+            line_num += 1
+            logfn("s3cmd line %s: %s" % (line_num, line))
 
 if __name__ == '__main__':
     """This section is used for testing the code. """
