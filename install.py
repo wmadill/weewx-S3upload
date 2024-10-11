@@ -17,7 +17,7 @@ class S3uploadInstaller(ExtensionInstaller):
                 'StdReport': {
                     'S3upload': {
                         'skin': 'S3upload',
-                        'bucket_name': 'REPLACE_WITH_YOUR_S3_BUCKET_NAME',}}},
+                        'bucket_name': 'BUCKET_NAME',}}},
             files=[('bin/user', ['bin/user/S3upload.py']),
                    ('skins/S3upload', ['skins/S3upload/skin.conf'])],
             )
