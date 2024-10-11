@@ -84,10 +84,19 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         # Get the options from the configuration dictionary and credential file.
         # Raise an exception if a required option is missing.
+        html_root = self.config_dict['StdReport']['HTML_ROOT']
+        self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
         try:
-            html_root = self.config_dict['StdReport']['HTML_ROOT']
-            self.local_root = os.path.join(self.config_dict['WEEWX_ROOT'], html_root) + "/"
             self.bucket_name = self.skin_dict['bucket_name']
+        except KeyError as e:
+            self.logerr("required %s not set." % e)
+            return
+
+        # validate that bucket_name is set to something other than
+        # blank or the default
+        if self.bucket_name is None or self.bucket_name.startswith('BUCKET_'):
+            self.logerr("bucket name not set")
+            return
 
         self.logdbg("upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
