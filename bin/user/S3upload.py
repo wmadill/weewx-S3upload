@@ -41,7 +41,9 @@ import configobj
 
 from weeutil.weeutil import timestamp_to_string, option_as_list
 import weewx
+from weewx.cheetahgenerator import SearchList
 
+S3UPLOAD_VERSION = "2.2"
 MSG_BASE = "s3uploadgenerator: "
 
 # Inherit from the base class ReportGenerator
@@ -206,59 +208,18 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         return "uploaded %d files " % file_cnt + byte_msg
 
     # Log raw output from s3cmd. 
-    # 
     def logoutput(self, stroutput, logfn):
         line_num = 0
         for line in iter(stroutput.splitlines()):
             line_num += 1
             logfn("s3cmd line %s: %s" % (line_num, line))
+            
+# Search List Extension
+class S3uploadSearchList(SearchList):
 
-if __name__ == '__main__':
-    """This section is used for testing the code. """
-    exit(0)
-    # Note that this fails!
-    import sys
-    import configobj
-    from optparse import OptionParser
+    def __init__(self, generator):
+        SearchList.__init__(self, generator)
+        self.version = S3UPLOAD_VERSION
 
-
-    usage_string ="""Usage: 
-    
-    S3upload.py config_path 
-    
-    Arguments:
-    
-      config_path: Path to weewx.conf"""
-
-    parser = OptionParser(usage=usage_string)
-    (options, args) = parser.parse_args()
-    
-    if len(args) < 1:
-        sys.stderr.write("Missing argument(s).\n")
-        sys.stderr.write(parser.parse_args(["--help"]))
-        exit()
-        
-    config_path = args[0]
-    
-    weewx.debug = 1
-    
-    try :
-        config_dict = configobj.ConfigObj(config_path, file_error=True)
-    except IOError:
-        print ("Unable to open configuration file ", config_path)
-        exit()
-        
-    if 'S3upload' not in config_dict:
-        print >>sys.stderr, "No [S3upload] section in the configuration file %s" % config_path
-        exit(1)
-    
-    engine = None
-    S3upload = uploadFiles(engine, config_dict)
-    
-    rec = {'extraTemp1': 1.0,
-           'outTemp'   : 38.2,
-           'dateTime'  : int(time.time())}
-
-    event = weewx.Event(weewx.NEW_ARCHIVE_RECORD, record=rec)
-    S3upload.newArchiveRecord(event)
-    
+    def get_extension_list(self, timespan, db_lookup):
+        return [{"S3upload": self}]
