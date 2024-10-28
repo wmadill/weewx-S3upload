@@ -15,9 +15,14 @@ To use this uploader, add the following to your configuration file in the
         skin = S3upload
         bucket_name = "BUCKET_NAME"
         s3cmd_path = /full/path/to/s3cmd
+        s3cfg_path = /full/path/to/.s3cfg
 
 The "s3cmd_path" entry is only needed if the uploader cannot find where
 s3cmd is installed.
+
+The "s3cfg_path" entry is only needed if either the uploader cannot find 
+the default .s3cfg (usually in ~/.s3cfg) or it has a different name 
+and/or location.
 
 In the weewx home directory, create a file named ".s3cfg" if it doesn't 
 already exist and set the "access_key" and "secret_key" values for the
@@ -43,7 +48,7 @@ from weeutil.weeutil import timestamp_to_string, option_as_list
 import weewx
 from weewx.cheetahgenerator import SearchList
 
-S3UPLOAD_VERSION = "2.2"
+S3UPLOAD_VERSION = "2.3"
 MSG_BASE = "s3uploadgenerator: "
 
 # Inherit from the base class ReportGenerator
@@ -105,14 +110,17 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         self.logdbg("upload configured from '%s' to '%s'" % (self.local_root, self.bucket_name)) 
             
-        
         # Get full path to "s3cmd"; exit if not installed
-        # use 's3cmd_path' from configuration dictionary if set
+        # Use 's3cmd_path' from configuration dictionary if set
         self.s3cmd_path = None
         try:
             self.s3cmd_path = self.skin_dict['s3cmd_path']
+            # Confirm it exists
+            if not os.path.exists(self.s3cmd_path):
+                self.logerr("'s3cmd'at '%s' does not exist" % self.s3cmd_path)
+                return
         except KeyError as e:
-            self.logdbg("s3cmd_path not set")
+            self.logdbg("'s3cmd_path' config option not set")
         
         # Full path to "s3cmd" not set; try to find it
         if self.s3cmd_path is None:
@@ -120,12 +128,12 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
             self.s3cmd_path = path_proc.communicate()[0].decode().strip()
             # 'which' returns an empty string if "s3cmd" not in $PATH
             if self.s3cmd_path == '':
-                self.logerr("'s3cmd' cannot be found")
+                self.logerr("'s3cmd' is not installed or not in $PATH")
                 return
 
         # Validate that the file is executble
         if not os.access(self.s3cmd_path, os.X_OK):
-            self.logerr("%s is not an executable file" % self.s3cmd_path)
+            self.logerr("'s3cmd' at '%s' is not an executable file" % self.s3cmd_path)
             return
 
         self.logdbg("s3cmd location: "  + self.s3cmd_path)
