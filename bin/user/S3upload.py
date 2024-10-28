@@ -117,7 +117,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
             self.s3cmd_path = self.skin_dict['s3cmd_path']
             # Confirm it exists
             if not os.path.exists(self.s3cmd_path):
-                self.logerr("'s3cmd'at '%s' does not exist" % self.s3cmd_path)
+                self.logerr("'s3cmd' at '%s' does not exist" % self.s3cmd_path)
                 return
         except KeyError as e:
             self.logdbg("'s3cmd_path' config option not set")
@@ -138,13 +138,30 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
 
         self.logdbg("s3cmd location: "  + self.s3cmd_path)
 
+        # If 's3cfg_path' (from configuation dictionary) is set,
+        # confirm the file exists and is readable
+        self.s3cfg_path = None
+        try:
+            self.s3cfg_path = self.skin_dict['s3cfg_path']
+            # Confirm it exists and is readable
+            if not os.path.exists(self.s3cfg_path):
+                self.logerr("'s3cfg' at '%s' does not exist" % self.s3cfg_path)
+                return
+            if not os.access(self.s3cfg_path, os.R_OK):
+                self.logerr("'s3cfg' at '%s' is not readable" % self.s3cfg_path)
+                return
+            self.logdbg("s3cfg location specified as: "  + self.s3cfg_path)
+        except KeyError as e:
+            self.logdbg("'s3cfg_path' config option not set")
+
         # Build s3cmd command string
         cmd = [self.s3cmd_path]
         cmd.extend(["--guess-mime-type"])
         cmd.extend(["--no-mime-magic"])
+        cmd.extend(["--delete-removed"])
         cmd.extend(["sync"])
-        ##FIXME need to find correct directory
-        #cmd.extend(["--config=/home/weewx/.s3cfg"])
+        if self.s3cfg_path is not None:
+            cmd.extend(["--config=%s" % self.s3cfg_path])
         cmd.extend([self.local_root])
         cmd.extend(["s3://%s" % self.bucket_name])
 
