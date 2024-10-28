@@ -1,5 +1,12 @@
 # Change Log
 
+## v2.2 - 12 October 2024
+Released to newly built weewx
+- Add config option for s3cmd path, clean up bucket name config
+- Removed threading since not needed
+- Cleaned up logging s3cmd output
+- Add search list extension for "version"
+
 ## v2.1 - 19 May 2020
 Now work on Python 2.7/weewx 3.9.2 and Python 3.7.3/weewx 4.0.0
 on Debian 10.3
