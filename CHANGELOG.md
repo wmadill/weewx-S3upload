@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.3 = 28 October 2024
+- Ensure that s3cmd_path, if specified, exists
+- Add support for s3cfg path
+
 ## v2.2 - 12 October 2024
 Released to newly built weewx
 - Add config option for s3cmd path, clean up bucket name config

@@ -75,6 +75,15 @@ DO NOT CHECK THIS INTO A PUBLIC git REPOSITORY.
           bucket_name = 'REPLACE_WITH_YOUR_S3_BUCKET_NAME'
   ```
 
+3. if necessary, add either or both of these to the [[S3upload]]
+   stanza if they are not automatically found
+   ...
+      [[S3upload]]
+      ...
+          s3cmd_path = /full/path/to/s3cmd
+          s3cfg_path = /full/path/to/.s3cfg
+   ...
+
 3. create .s3cfg as described above.
 
 4. restart weewx
