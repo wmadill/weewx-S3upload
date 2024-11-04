@@ -159,9 +159,9 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         cmd.extend(["--guess-mime-type"])
         cmd.extend(["--no-mime-magic"])
         cmd.extend(["--delete-removed"])
-        cmd.extend(["sync"])
         if self.s3cfg_path is not None:
             cmd.extend(["--config=%s" % self.s3cfg_path])
+        cmd.extend(["sync"])
         cmd.extend([self.local_root])
         cmd.extend(["s3://%s" % self.bucket_name])
 
@@ -218,10 +218,13 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
             self.logoutput(stroutput, self.loginf)
             return ""
 
-        file_cnt = 0
+        upload_cnt = 0
+        delete_cnt = 0
         for line in iter(stroutput.splitlines()):
             if line.find(b'upload: ') >= 0:
-                file_cnt += 1
+                upload_cnt += 1
+            if line.find(b'delete: ') >= 0:
+                delete_cnt += 1
             if line.find(b'Done. Uploaded ') >= 0:
                 # get number of bytes uploaded
                 m = re.search(r"Uploaded (\d*) bytes", str(line))
@@ -230,7 +233,7 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
                 else:
                     byte_msg = "Unknown number of bytes"
 
-        return "uploaded %d files " % file_cnt + byte_msg
+        return "deleted %d files, uploaded %d files " % (delete_cnt, upload_cnt) + byte_msg
 
     # Log raw output from s3cmd. 
     def logoutput(self, stroutput, logfn):
