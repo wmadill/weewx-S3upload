@@ -34,6 +34,7 @@ git repository.
 ********************************************************************************
 """
 
+### Try commenting each of these out to see what is really used...
 import errno
 import glob
 import os.path
@@ -48,8 +49,7 @@ from weeutil.weeutil import timestamp_to_string, option_as_list
 import weewx
 from weewx.cheetahgenerator import SearchList
 
-S3UPLOAD_VERSION = "2.3"
-MSG_BASE = "s3uploadgenerator: "
+S3UPLOAD_VERSION = "2.4"
 
 # Inherit from the base class ReportGenerator
 class S3uploadGenerator(weewx.reportengine.ReportGenerator):
@@ -64,20 +64,20 @@ class S3uploadGenerator(weewx.reportengine.ReportGenerator):
         log = logging.getLogger(__name__)
         
         def logdbg(self, msg):
-            self.log.debug(MSG_BASE + msg)
+            self.log.debug(msg)
         
         def loginf(self, msg):
-            self.log.info(MSG_BASE + msg)
+            self.log.info(msg)
         
         def logerr(self, msg):
-            self.log.error(MSG_BASE + msg)
+            self.log.error(msg)
         
     except ImportError:
         # Old-style weewx logging
         import syslog
         
         def logmsg(self, level, msg):
-            self.syslog.syslog(level, MSG_BASE + "%s:" % msg)
+            self.syslog.syslog(level, "%s:" % msg)
         
         def logdbg(self, msg):
             self.logmsg(self.syslog.LOG_DEBUG, msg)
