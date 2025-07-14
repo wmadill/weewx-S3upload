@@ -1,6 +1,10 @@
 # Change Log
 
-## v2.3 = 28 October 2024
+## v2.4 - 21 November 2024
+- Change logged message format
+- Additionally report number of deleted files
+
+## v2.3 - 28 October 2024
 - Ensure that s3cmd_path, if specified, exists
 - Add support for s3cfg path
 
