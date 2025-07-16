@@ -8,7 +8,7 @@ def loader():
 class S3uploadInstaller(ExtensionInstaller):
     def __init__(self):
         super(S3uploadInstaller, self).__init__(
-            version="2.3",
+            version="2.4",
             name='S3upload',
             description='Upload files to an S3 bucket',
             author='Bill Madill',
